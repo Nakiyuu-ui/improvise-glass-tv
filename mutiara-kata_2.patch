@@ -1,0 +1,156 @@
+﻿diff --git a/launcher/app/src/main/java/com/gathin/tvhome/MainActivity.java b/launcher/app/src/main/java/com/gathin/tvhome/MainActivity.java
+index 3cd391e..45c8ddd 100644
+--- a/launcher/app/src/main/java/com/gathin/tvhome/MainActivity.java
++++ b/launcher/app/src/main/java/com/gathin/tvhome/MainActivity.java
+@@ -110,6 +110,27 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
+     private TextView heroName;
+     private TextView heroDesc;
+     private TextView heroWhere;
++    /** Mutiara kata beneath the title, changing every minute; each entry is "text|name". */
++    private static final long QUOTE_MS = 60_000L;
++    private String[] quotes;
++    private int quoteIndex;
++    private final Runnable quoteTick = new Runnable() {
++        @Override
++        public void run() {
++            if (quotes != null && quotes.length > 1) {
++                quoteIndex = (quoteIndex + 1) % quotes.length;
++                if (heroShown) {
++                    heroDesc.animate().cancel();
++                    heroDesc.animate().alpha(0f).setDuration(reducedMotion ? 0 : 300).withEndAction(() -> {
++                        heroDesc.setText(quoteText());
++                        heroDesc.setVisibility(View.VISIBLE);
++                        heroDesc.animate().alpha(1f).setDuration(reducedMotion ? 0 : 500).start();
++                    }).start();
++                }
++            }
++            handler.postDelayed(this, QUOTE_MS);
++        }
++    };
+     /** The place on screen and a few lines about it; null for the user's own wallpapers. */
+     private String placeName;
+     private String placeText = "", placeCountry = "";
+@@ -283,6 +304,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
+         heroNameMaxWidth = Math.round(usable * HERO_NAME_WIDTH_SHARE);
+         heroName.setMaxWidth(heroNameMaxWidth);
+         heroDesc.setMaxWidth(heroMaxWidth);
++        heroDesc.setMaxLines(4);
++        quotes = getResources().getStringArray(R.array.mutiara_kata);
++        quoteIndex = new java.util.Random().nextInt(Math.max(1, quotes.length));
+         // The shelf grows and shrinks with the name and the description, so it hangs from its
+         // bottom edge: every time it is measured, its top is worked out again. Positioning it by
+         // the height it happened to have beforehand is what let a tall block run into the dock.
+@@ -673,6 +697,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
+         updateInputsButton();
+         startWallpaperRotation();
+         handler.postDelayed(minuteTick, MINUTE_MS);
++        handler.removeCallbacks(quoteTick);
++        handler.postDelayed(quoteTick, QUOTE_MS);
+         handler.removeCallbacks(cacheClean);
+         handler.postDelayed(cacheClean, CacheCleaner.IDLE_MS);
+         hiddenSinceResume = false;
+@@ -759,6 +785,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
+         super.onPause();
+         unregisterReceiver(packageReceiver);
+         handler.removeCallbacks(minuteTick);
++        handler.removeCallbacks(quoteTick);
+         handler.removeCallbacks(wallTick);
+         // Nothing of ours stays on screen over another app; an undecided prompt simply returns next time.
+         if (cardPrompt != null) cardPrompt.dismiss();
+@@ -877,7 +904,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
+         // The place the picture is of, when there is one; the app's own name is the fallback for
+         // the user's own wallpapers, which carry no title.
+         final String label = placeName != null ? placeName : adapter.labelAt(position);
+-        final String desc = placeName != null ? placeText : "";
++        final String desc = quoteText();
+         final String where = placeName != null ? placeCountry : "";
+         int color = adapter.ambientColorAt(position);
+         heroBottom = dockTopInRoot - HERO_GAP_DP * density;
+@@ -996,10 +1023,22 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
+             descLp.topMargin = top;
+             heroDesc.setLayoutParams(descLp);
+         }
++        heroDesc.animate().cancel();
++        heroDesc.setAlpha(1f);
+         heroDesc.setText(desc);
+         heroDesc.setVisibility(desc.isEmpty() ? View.GONE : View.VISIBLE);
+     }
+ 
++    /** The current mutiara kata as two lines: the quote in curly quotes, then the name after a dash. */
++    private String quoteText() {
++        if (quotes == null || quotes.length == 0) return "";
++        String[] parts = quotes[quoteIndex % quotes.length].split("\\|", 2);
++        String text = parts[0].trim();
++        if (text.isEmpty()) return "";
++        String who = parts.length > 1 ? parts[1].trim() : "";
++        return "“" + text + "”" + (who.isEmpty() ? "" : "\n— " + who);
++    }
++
+     /**
+      * Shouting titles are calmed down: "THE RIBBON HERO" becomes "The Ribbon Hero". A title that
+      * already has lower case is left exactly as its studio wrote it, so "LEGO Star Wars" and
+@@ -1057,7 +1096,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
+         if (heroShown && title != null) {
+             heroShelf.animate().cancel();
+             heroShelf.animate().alpha(0f).setDuration(reducedMotion ? 100 : 250).withEndAction(() -> {
+-                setHeroText(title, country, overview);
++                setHeroText(title, country, quoteText());
+                 if (heroShown) heroShelf.animate().alpha(1f).setDuration(reducedMotion ? 120 : 400).start();
+             }).start();
+         }
+diff --git a/launcher/app/src/main/res/layout/activity_main.xml b/launcher/app/src/main/res/layout/activity_main.xml
+index 75d357d..3079f0d 100644
+--- a/launcher/app/src/main/res/layout/activity_main.xml
++++ b/launcher/app/src/main/res/layout/activity_main.xml
+@@ -64,7 +64,7 @@
+             android:fontVariationSettings="'wght' 300"
+             android:lineSpacingExtra="2dp"
+             android:includeFontPadding="false"
+-            android:maxLines="2"
++            android:maxLines="4"
+             android:ellipsize="end"
+             android:visibility="gone" />
+     </LinearLayout>
+diff --git a/launcher/app/src/main/res/values/quotes.xml b/launcher/app/src/main/res/values/quotes.xml
+new file mode 100644
+index 0000000..6a93aac
+--- /dev/null
++++ b/launcher/app/src/main/res/values/quotes.xml
+@@ -0,0 +1,37 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Mutiara kata yang bertukar setiap minit di atas dock, menggantikan huraian gambar Bing.
++
++     Bentuk setiap baris:  teks dalam bahasa Melayu|Nama tokoh
++     Untuk buang satu petikan, padam barisnya. Untuk tambah, salin satu baris. Tanda ' mesti ditulis \'.
++
++     Teks Melayu di bawah ialah petikan pendek. Yang asalnya bahasa Inggeris telah dimelayukan
++     (terjemahan sendiri, bukan teks rasmi). Nota sumber ditulis di atas setiap baris; yang bertanda
++     [SEMAK] belum disahkan dengan buku asalnya, jadi semak dulu atau buang sebelum dikekalkan. -->
++<resources>
++    <string-array name="mutiara_kata">
++        <!-- al-Attas. Islam: The Concept of Religion and the Foundation of Ethics and Morality (disalin daripada senarai petikan Goodreads). [SEMAK edisi dan muka surat] -->
++        <item>Keadilan dan ketidakadilan bermula dan berakhir pada diri sendiri.|Syed Muhammad Naquib al-Attas</item>
++        <!-- al-Attas. Islam and Secularism (Goodreads). Asal: "Man is like an island set in isolation in a fathomless sea". [SEMAK] -->
++        <item>Manusia ibarat sebuah pulau yang terasing di tengah lautan yang tidak terduga dalamnya.|Syed Muhammad Naquib al-Attas</item>
++        <!-- al-Attas. On Justice and the Nature of Man, dipetik oleh Sultan Nazrin (ucapan 17 Dis 2015, Malay Mail). Asal: "Justice is a state of being". [SEMAK: potongan pendek, konteks penuh tidak dilihat] -->
++        <item>Keadilan ialah suatu keadaan kewujudan.|Syed Muhammad Naquib al-Attas</item>
++
++        <!-- Alatas. Kita dengan Islam: Tumbuh Tiada Berbuah (DBP, 2015), hlm. 46, seperti dipetik makalah Firdaus (UPSI). -->
++        <item>Masuknya alat dan cara-cara baharu sains belum bererti masuknya semangat sains.|Syed Hussein Alatas</item>
++        <!-- Alatas. Intellectuals in Developing Societies, hlm. 90, seperti dipetik ulasan Kawah Buku. Asal: "The fundamental problem is the leading elites". [SEMAK dengan buku] -->
++        <item>Masalah asasnya ialah golongan elit yang memimpin.|Syed Hussein Alatas</item>
++        <!-- Alatas. Dipetik kolumnis Malay Mail (21 Okt 2013) tanpa menyebut buku atau tahun. Asal: "Bebalisma is authoritarian, non-reflexive and non-experimental". [SEMAK] -->
++        <item>Bebalisma bersifat autoritarian, tidak refleksif dan tidak eksperimental.|Syed Hussein Alatas</item>
++
++        <!-- Badawi. Kata-kata ketika dilantik Perdana Menteri (31 Okt 2003), dilaporkan Utusan Malaysia (2025). -->
++        <item>Jangan bekerja untuk saya, tetapi mari bekerja bersama-sama saya.|Tun Abdullah Ahmad Badawi</item>
++        <!-- Badawi. Ucapan Islam Hadhari di Sydney, 8 April 2005 (Asia Society). Asal: "It is not an approach to pacify the West." Perkataan "Islam Hadhari" ditambah supaya ayat jelas. [SEMAK] -->
++        <item>Islam Hadhari bukan pendekatan untuk mengambil hati Barat.|Tun Abdullah Ahmad Badawi</item>
++
++        <!-- Za'ba. Dipetik makalah Sejarah (Univ. Malaya) tanpa nota kaki; karya asal tidak dinyatakan. [SEMAK karya dan tahun] -->
++        <item>Kita diberi balasan hanya sukat sebanyak yang kita usahakan sahaja.|Za\'ba</item>
++
++        <!-- Tunku Abdul Rahman. Challenging Times (2007), hlm. 125, seperti dipetik makalah Sarjana (Univ. Malaya). Asal: "Islam stands for peace and goodwill among men". -->
++        <item>Islam melambangkan keamanan dan muhibah sesama manusia.|Tunku Abdul Rahman</item>
++    </string-array>
++</resources>

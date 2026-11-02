@@ -110,6 +110,27 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private TextView heroName;
     private TextView heroDesc;
     private TextView heroWhere;
+    /** Mutiara kata beneath the title, changing every minute; each entry is "text|name". */
+    private static final long QUOTE_MS = 60_000L;
+    private String[] quotes;
+    private int quoteIndex;
+    private final Runnable quoteTick = new Runnable() {
+        @Override
+        public void run() {
+            if (quotes != null && quotes.length > 1) {
+                quoteIndex = (quoteIndex + 1) % quotes.length;
+                if (heroShown) {
+                    heroDesc.animate().cancel();
+                    heroDesc.animate().alpha(0f).setDuration(reducedMotion ? 0 : 300).withEndAction(() -> {
+                        heroDesc.setText(quoteText());
+                        heroDesc.setVisibility(View.VISIBLE);
+                        heroDesc.animate().alpha(1f).setDuration(reducedMotion ? 0 : 500).start();
+                    }).start();
+                }
+            }
+            handler.postDelayed(this, QUOTE_MS);
+        }
+    };
     /** The place on screen and a few lines about it; null for the user's own wallpapers. */
     private String placeName;
     private String placeText = "", placeCountry = "";
@@ -283,6 +304,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         heroNameMaxWidth = Math.round(usable * HERO_NAME_WIDTH_SHARE);
         heroName.setMaxWidth(heroNameMaxWidth);
         heroDesc.setMaxWidth(heroMaxWidth);
+        heroDesc.setMaxLines(4);
+        quotes = getResources().getStringArray(R.array.mutiara_kata);
+        quoteIndex = new java.util.Random().nextInt(Math.max(1, quotes.length));
         // The shelf grows and shrinks with the name and the description, so it hangs from its
         // bottom edge: every time it is measured, its top is worked out again. Positioning it by
         // the height it happened to have beforehand is what let a tall block run into the dock.
@@ -673,6 +697,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         updateInputsButton();
         startWallpaperRotation();
         handler.postDelayed(minuteTick, MINUTE_MS);
+        handler.removeCallbacks(quoteTick);
+        handler.postDelayed(quoteTick, QUOTE_MS);
         handler.removeCallbacks(cacheClean);
         handler.postDelayed(cacheClean, CacheCleaner.IDLE_MS);
         hiddenSinceResume = false;
@@ -759,6 +785,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         super.onPause();
         unregisterReceiver(packageReceiver);
         handler.removeCallbacks(minuteTick);
+        handler.removeCallbacks(quoteTick);
         handler.removeCallbacks(wallTick);
         // Nothing of ours stays on screen over another app; an undecided prompt simply returns next time.
         if (cardPrompt != null) cardPrompt.dismiss();
@@ -877,7 +904,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         // The place the picture is of, when there is one; the app's own name is the fallback for
         // the user's own wallpapers, which carry no title.
         final String label = placeName != null ? placeName : adapter.labelAt(position);
-        final String desc = placeName != null ? placeText : "";
+        final String desc = quoteText();
         final String where = placeName != null ? placeCountry : "";
         int color = adapter.ambientColorAt(position);
         heroBottom = dockTopInRoot - HERO_GAP_DP * density;
@@ -996,8 +1023,20 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             descLp.topMargin = top;
             heroDesc.setLayoutParams(descLp);
         }
+        heroDesc.animate().cancel();
+        heroDesc.setAlpha(1f);
         heroDesc.setText(desc);
         heroDesc.setVisibility(desc.isEmpty() ? View.GONE : View.VISIBLE);
+    }
+
+    /** The current mutiara kata as two lines: the quote in curly quotes, then the name after a dash. */
+    private String quoteText() {
+        if (quotes == null || quotes.length == 0) return "";
+        String[] parts = quotes[quoteIndex % quotes.length].split("\\|", 2);
+        String text = parts[0].trim();
+        if (text.isEmpty()) return "";
+        String who = parts.length > 1 ? parts[1].trim() : "";
+        return "“" + text + "”" + (who.isEmpty() ? "" : "\n— " + who);
     }
 
     /**
@@ -1057,7 +1096,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (heroShown && title != null) {
             heroShelf.animate().cancel();
             heroShelf.animate().alpha(0f).setDuration(reducedMotion ? 100 : 250).withEndAction(() -> {
-                setHeroText(title, country, overview);
+                setHeroText(title, country, quoteText());
                 if (heroShown) heroShelf.animate().alpha(1f).setDuration(reducedMotion ? 120 : 400).start();
             }).start();
         }

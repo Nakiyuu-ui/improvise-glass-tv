@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mutiara kata yang bertukar setiap minit di atas dock, menggantikan huraian gambar Bing.
+
+     Bentuk setiap baris:  teks dalam bahasa Melayu|Nama tokoh
+     Untuk buang satu petikan, padam barisnya. Untuk tambah, salin satu baris. Tanda ' mesti ditulis \'.
+
+     Teks Melayu di bawah ialah petikan pendek. Yang asalnya bahasa Inggeris telah dimelayukan
+     (terjemahan sendiri, bukan teks rasmi). Nota sumber ditulis di atas setiap baris; yang bertanda
+     [SEMAK] belum disahkan dengan buku asalnya, jadi semak dulu atau buang sebelum dikekalkan. -->
+<resources>
+    <string-array name="mutiara_kata">
+        <!-- al-Attas. Islam: The Concept of Religion and the Foundation of Ethics and Morality (disalin daripada senarai petikan Goodreads). [SEMAK edisi dan muka surat] -->
+        <item>Keadilan dan ketidakadilan bermula dan berakhir pada diri sendiri.|Syed Muhammad Naquib al-Attas</item>
+        <!-- al-Attas. Islam and Secularism (Goodreads). Asal: "Man is like an island set in isolation in a fathomless sea". [SEMAK] -->
+        <item>Manusia ibarat sebuah pulau yang terasing di tengah lautan yang tidak terduga dalamnya.|Syed Muhammad Naquib al-Attas</item>
+        <!-- al-Attas. On Justice and the Nature of Man, dipetik oleh Sultan Nazrin (ucapan 17 Dis 2015, Malay Mail). Asal: "Justice is a state of being". [SEMAK: potongan pendek, konteks penuh tidak dilihat] -->
+        <item>Keadilan ialah suatu keadaan kewujudan.|Syed Muhammad Naquib al-Attas</item>
+
+        <!-- Alatas. Kita dengan Islam: Tumbuh Tiada Berbuah (DBP, 2015), hlm. 46, seperti dipetik makalah Firdaus (UPSI). -->
+        <item>Masuknya alat dan cara-cara baharu sains belum bererti masuknya semangat sains.|Syed Hussein Alatas</item>
+        <!-- Alatas. Intellectuals in Developing Societies, hlm. 90, seperti dipetik ulasan Kawah Buku. Asal: "The fundamental problem is the leading elites". [SEMAK dengan buku] -->
+        <item>Masalah asasnya ialah golongan elit yang memimpin.|Syed Hussein Alatas</item>
+        <!-- Alatas. Dipetik kolumnis Malay Mail (21 Okt 2013) tanpa menyebut buku atau tahun. Asal: "Bebalisma is authoritarian, non-reflexive and non-experimental". [SEMAK] -->
+        <item>Bebalisma bersifat autoritarian, tidak refleksif dan tidak eksperimental.|Syed Hussein Alatas</item>
+
+        <!-- Badawi. Kata-kata ketika dilantik Perdana Menteri (31 Okt 2003), dilaporkan Utusan Malaysia (2025). -->
+        <item>Jangan bekerja untuk saya, tetapi mari bekerja bersama-sama saya.|Tun Abdullah Ahmad Badawi</item>
+        <!-- Badawi. Ucapan Islam Hadhari di Sydney, 8 April 2005 (Asia Society). Asal: "It is not an approach to pacify the West." Perkataan "Islam Hadhari" ditambah supaya ayat jelas. [SEMAK] -->
+        <item>Islam Hadhari bukan pendekatan untuk mengambil hati Barat.|Tun Abdullah Ahmad Badawi</item>
+
+        <!-- Za'ba. Dipetik makalah Sejarah (Univ. Malaya) tanpa nota kaki; karya asal tidak dinyatakan. [SEMAK karya dan tahun] -->
+        <item>Kita diberi balasan hanya sukat sebanyak yang kita usahakan sahaja.|Za\'ba</item>
+
+        <!-- Tunku Abdul Rahman. Challenging Times (2007), hlm. 125, seperti dipetik makalah Sarjana (Univ. Malaya). Asal: "Islam stands for peace and goodwill among men". -->
+        <item>Islam melambangkan keamanan dan muhibah sesama manusia.|Tunku Abdul Rahman</item>
+    </string-array>
+</resources>
